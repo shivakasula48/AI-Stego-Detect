@@ -3,201 +3,730 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Steganography Test Portal</title>
+    <title>AI Steganography Suite</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #0d0e1a;
+            --card: #14162b;
+            --card2: #1a1d35;
+            --border: rgba(255,255,255,0.08);
+            --accent: #8b5cf6;
+            --accent2: #6d28d9;
+            --green: #10b981;
+            --red: #ef4444;
+            --yellow: #f59e0b;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --radius: 14px;
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
-        .container { max-width: 860px; margin: 0 auto; }
-        h1 { text-align: center; color: #1a1a2e; margin-bottom: 30px; font-size: 1.8em; letter-spacing: 1px; }
-        .section { background: #fff; margin-bottom: 24px; padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .section h2 { font-size: 1.1em; color: #6c3483; border-left: 4px solid #8e44ad; padding-left: 10px; margin-bottom: 18px; }
-        .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 0.9em; font-weight: 600; margin-bottom: 5px; color: #555; }
-        .form-group input[type="file"],
-        .form-group input[type="text"] { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; background: #fafafa; }
-        button { background: #8e44ad; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: 600; transition: background 0.2s; }
-        button:hover { background: #6c3483; }
-        .spinner { display: none; margin-top: 10px; font-size: 0.9em; color: #888; font-style: italic; }
-        .result-box { display: none; margin-top: 16px; padding: 14px; border-radius: 8px; }
-        .result-success { background: #eafaf1; border-left: 4px solid #27ae60; }
-        .result-error { background: #fdeded; border-left: 4px solid #e74c3c; color: #c0392b; }
-        .result-img { max-width: 100%; max-height: 320px; border-radius: 6px; margin-top: 12px; border: 1px solid #ddd; }
-        .download-link { display: inline-block; margin-top: 10px; color: #3498db; font-weight: bold; text-decoration: none; }
-        .grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-        .grid img { width: 140px; height: 140px; object-fit: cover; border: 1px solid #ccc; border-radius: 6px; }
-        .badge { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 1em; font-weight: 700; margin-top: 6px; }
-        .badge-stego { background: #fdecea; color: #c0392b; border: 1px solid #e74c3c; }
-        .badge-clean { background: #eafaf1; color: #1e8449; border: 1px solid #27ae60; }
-        .confidence { font-size: 0.88em; color: #777; margin-top: 4px; }
-        .preview-img { max-width: 200px; border-radius: 6px; margin-top: 10px; border: 1px solid #ddd; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px 16px 60px;
+        }
+
+        /* ── Header ─────────────────────────────────────── */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, var(--accent), #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header .logo .icon { font-size: 2.2rem; -webkit-text-fill-color: initial; }
+        .header p {
+            color: var(--muted);
+            margin-top: 6px;
+            font-size: 0.95rem;
+        }
+        .badge-live {
+            display: inline-block;
+            background: rgba(16,185,129,0.15);
+            color: var(--green);
+            border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        /* ── Tabs Layout ─────────────────────────────────── */
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: var(--card2);
+            border: 1.5px solid var(--border);
+            color: var(--muted);
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn:hover { border-color: rgba(139,92,246,0.3); color: var(--text); }
+        .tab-btn.active.purple { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border-color: transparent; box-shadow: 0 4px 15px rgba(139,92,246,0.2); }
+        .tab-btn.active.green { background: linear-gradient(135deg, var(--green), #059669); color: white; border-color: transparent; box-shadow: 0 4px 15px rgba(16,185,129,0.2); }
+        .tab-btn.active.red { background: linear-gradient(135deg, var(--red), #dc2626); color: white; border-color: transparent; box-shadow: 0 4px 15px rgba(239,68,68,0.2); }
+        
+        .main-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* ── Card ────────────────────────────────────────── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: rgba(139,92,246,0.3); }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .card.purple::before { background: linear-gradient(90deg, var(--accent), #3b82f6); }
+        .card.green::before  { background: linear-gradient(90deg, var(--green), #06b6d4); }
+        .card.red::before    { background: linear-gradient(90deg, var(--red), #f97316); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .card-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .card-icon.purple { background: rgba(139,92,246,0.15); }
+        .card-icon.green  { background: rgba(16,185,129,0.15); }
+        .card-icon.red    { background: rgba(239,68,68,0.15); }
+        .card-title { font-size: 1.05rem; font-weight: 600; }
+        .card-subtitle { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+
+        /* ── Form Elements ───────────────────────────────── */
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--muted);
+            margin-bottom: 7px;
+            letter-spacing: 0.3px;
+        }
+        .file-input-wrap {
+            position: relative;
+            background: var(--card2);
+            border: 1.5px dashed var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .file-input-wrap:hover {
+            border-color: rgba(139,92,246,0.5);
+            background: rgba(139,92,246,0.05);
+        }
+        .file-input-wrap input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--muted);
+            font-size: 0.88rem;
+        }
+        .file-input-label .file-icon { font-size: 1.3rem; }
+        .file-name-display {
+            color: var(--text);
+            font-size: 0.88rem;
+            margin-top: 6px;
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 6px;
+            display: none;
+            word-break: break-all;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            background: var(--card2);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 11px 14px;
+            color: var(--text);
+            font-size: 0.92rem;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+        input[type="text"]::placeholder { color: var(--muted); }
+
+        /* ── Buttons ─────────────────────────────────────── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 11px 22px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.92rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            color: white;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(139,92,246,0.4); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-green {
+            background: linear-gradient(135deg, var(--green), #059669);
+            color: white;
+        }
+        .btn-green:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(16,185,129,0.4); }
+        .btn-red {
+            background: linear-gradient(135deg, var(--red), #dc2626);
+            color: white;
+        }
+        .btn-red:hover { opacity: 0.9; transform: translateY(-1px); box-shadow: 0 4px 15px rgba(239,68,68,0.4); }
+
+        /* ── Spinner ─────────────────────────────────────── */
+        .spinner-wrap { display: none; align-items: center; gap: 10px; margin-top: 14px; color: var(--muted); font-size: 0.88rem; }
+        .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Result Boxes ────────────────────────────────── */
+        .result-box {
+            display: none;
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 10px;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .result-success {
+            background: rgba(16,185,129,0.08);
+            border: 1px solid rgba(16,185,129,0.25);
+        }
+        .result-error {
+            background: rgba(239,68,68,0.08);
+            border: 1px solid rgba(239,68,68,0.25);
+        }
+
+        .result-success .label-ok { color: var(--green); font-weight: 600; font-size: 0.92rem; }
+        .result-error .label-err  { color: var(--red); font-weight: 600; font-size: 0.92rem; }
+
+        .stego-preview {
+            margin-top: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            max-width: 200px;
+        }
+        .stego-preview img { width: 100%; display: block; }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            background: rgba(139,92,246,0.15);
+            border: 1px solid rgba(139,92,246,0.4);
+            color: var(--accent);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .download-btn:hover { background: rgba(139,92,246,0.25); }
+
+        .extracted-msg {
+            margin-top: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            color: var(--green);
+            word-break: break-all;
+        }
+
+        /* ── Detection Result ────────────────────────────── */
+        .detect-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-top: 12px;
+        }
+        .badge-stego {
+            background: rgba(239,68,68,0.12);
+            color: var(--red);
+            border: 1.5px solid rgba(239,68,68,0.4);
+        }
+        .badge-clean {
+            background: rgba(16,185,129,0.12);
+            color: var(--green);
+            border: 1.5px solid rgba(16,185,129,0.4);
+        }
+        .confidence-bar-wrap { margin-top: 12px; }
+        .confidence-label { font-size: 0.82rem; color: var(--muted); margin-bottom: 5px; }
+        .confidence-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255,255,255,0.08);
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.8s ease;
+        }
+        .fill-stego { background: linear-gradient(90deg, var(--red), #f97316); }
+        .fill-clean  { background: linear-gradient(90deg, var(--green), #06b6d4); }
+
+        .detect-preview {
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            max-width: 100%;
+            display: block;
+            margin-top: 14px;
+        }
+
+        /* ── Info Note ───────────────────────────────────── */
+        .info-note {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.2);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: var(--yellow);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .info-note .icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+        /* ── Pipeline header ─────────────────────────────── */
+        .pipeline-banner {
+            background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(59,130,246,0.08));
+            border: 1px solid rgba(139,92,246,0.2);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .pipeline-step {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.88rem;
+        }
+        .ps-num {
+            width: 26px; height: 26px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+        .pipe-arrow { color: var(--muted); font-size: 1.1rem; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🔐 Steganography Validation Portal</h1>
 
-    <!-- SECTION 1: EMBED -->
-    <div class="section">
-        <h2>1. Embed Secret Message</h2>
-        <form id="embedForm">
-            <div class="form-group">
-                <label>Cover Image (PNG)</label>
-                <input type="file" id="embedImage" accept=".png" required>
-            </div>
-            <div class="form-group">
-                <label>Secret Message</label>
-                <input type="text" id="embedMessage" placeholder="Enter your secret..." required>
-            </div>
-            <button type="submit">Encrypt &amp; Embed</button>
-        </form>
-        <p class="spinner" id="embedSpinner">⏳ Processing encryption and embedding pipeline...</p>
-        <div id="embedResult" class="result-box"></div>
+<!-- Header -->
+<div class="header">
+    <div class="logo"><span class="icon">🛡️</span> AI Steganography Suite</div>
+    <p>AI-Powered Steganography Detection using DCT + AES Encryption + CNN</p>
+    <div class="badge-live">● SYSTEM ONLINE</div>
+</div>
+
+<!-- Pipeline Banner -->
+<div class="pipeline-banner">
+    <div class="pipeline-step">
+        <div class="ps-num">1</div>
+        <span>Select natural photo</span>
     </div>
-
-    <!-- SECTION 2: EXTRACT -->
-    <div class="section">
-        <h2>2. Extract Hidden Message</h2>
-        <form id="extractForm">
-            <div class="form-group">
-                <label>Stego Image (PNG)</label>
-                <input type="file" id="extractImage" accept=".png" required>
-            </div>
-            <button type="submit">Extract &amp; Decrypt</button>
-        </form>
-        <p class="spinner" id="extractSpinner">⏳ Extracting and decrypting data...</p>
-        <div id="extractResult" class="result-box"></div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipeline-step">
+        <div class="ps-num">2</div>
+        <span>AES-256 Encrypt message</span>
     </div>
-
-    <!-- SECTION 3: DETECT -->
-    <div class="section">
-        <h2>3. AI Detection (CNN)</h2>
-        <form id="detectForm">
-            <div class="form-group">
-                <label>Image to Analyse (PNG)</label>
-                <input type="file" id="detectImage" accept=".png" required>
-            </div>
-            <button type="submit">🔍 Detect</button>
-        </form>
-        <p class="spinner" id="detectSpinner">⏳ Running AI model inference...</p>
-        <div id="detectResult" class="result-box"></div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipeline-step">
+        <div class="ps-num">3</div>
+        <span>DCT Embed into image</span>
     </div>
-
-    <!-- SECTION 4: DATASET -->
-    <div class="section">
-        <h2>4. Generate Mini Dataset</h2>
-        <p style="font-size:0.9em; color:#666; margin-bottom:14px;">Generates 3 synthetic stego images for visual batch validation.</p>
-        <button id="btnGenerate">⚙️ Generate Dataset</button>
-        <p class="spinner" id="generateSpinner">⏳ Generating dataset...</p>
-        <div id="generateResult" class="result-box"></div>
+    <span class="pipe-arrow">→</span>
+    <div class="pipeline-step">
+        <div class="ps-num">4</div>
+        <span>CNN AI Detection</span>
     </div>
 </div>
 
+<!-- Tabs Navigation -->
+<div class="tabs-container">
+    <button class="tab-btn active purple" onclick="switchTab('pane-embed', this)"><span>🔐</span> Encrypt &amp; Embed</button>
+    <button class="tab-btn green" onclick="switchTab('pane-extract', this)"><span>🔓</span> Extract &amp; Decrypt</button>
+    <button class="tab-btn red" onclick="switchTab('pane-detect', this)"><span>🤖</span> AI Detection</button>
+</div>
+
+<!-- Main Content Area -->
+<div class="main-content">
+
+    <!-- SECTION 1: EMBED -->
+    <div id="pane-embed" class="tab-pane active">
+        <div class="card purple">
+            <div class="card-header">
+                <div class="card-icon purple">🔐</div>
+                <div>
+                    <div class="card-title">1. Encrypt &amp; Embed</div>
+                    <div class="card-subtitle">Hide an encrypted message inside an image</div>
+                </div>
+            </div>
+
+            <div class="info-note">
+                <span class="icon">💡</span>
+                <span>For reliable detection, use a <strong>natural photograph</strong> (not diagrams or white backgrounds). Accepts PNG &amp; JPG.</span>
+            </div>
+
+            <form id="embedForm">
+                <div class="form-group">
+                    <label>COVER IMAGE</label>
+                    <div class="file-input-wrap" id="embedDropzone">
+                        <input type="file" id="embedImage" accept=".png,.jpg,.jpeg" required onchange="handleFile(this,'embedFileName','embedDropzone')">
+                        <div class="file-input-label">
+                            <span class="file-icon">🖼️</span>
+                            <span>Click to choose image (PNG / JPG)</span>
+                        </div>
+                    </div>
+                    <div id="embedFileName" class="file-name-display"></div>
+                </div>
+                <div class="form-group">
+                    <label>SECRET MESSAGE</label>
+                    <input type="text" id="embedMessage" placeholder="Enter your secret message..." required>
+                </div>
+                <button type="submit" class="btn btn-primary" id="embedBtn">
+                    🔐 Encrypt &amp; Embed
+                </button>
+            </form>
+            <div class="spinner-wrap" id="embedSpinner">
+                <div class="spinner"></div>
+                <span>Encrypting (AES-256) and embedding (DCT)...</span>
+            </div>
+            <div id="embedResult" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: EXTRACT -->
+    <div id="pane-extract" class="tab-pane">
+        <div class="card green">
+            <div class="card-header">
+                <div class="card-icon green">🔓</div>
+                <div>
+                    <div class="card-title">2. Extract &amp; Decrypt</div>
+                    <div class="card-subtitle">Recover the hidden message from a stego image</div>
+                </div>
+            </div>
+
+            <div class="info-note">
+                <span class="icon">⚠️</span>
+                <span>Upload only the <strong>stego image downloaded</strong> from this system. Do not re-compress or edit the file.</span>
+            </div>
+
+            <form id="extractForm">
+                <div class="form-group">
+                    <label>STEGO IMAGE (PNG)</label>
+                    <div class="file-input-wrap" id="extractDropzone">
+                        <input type="file" id="extractImage" accept=".png" required onchange="handleFile(this,'extractFileName','extractDropzone')">
+                        <div class="file-input-label">
+                            <span class="file-icon">🔏</span>
+                            <span>Click to choose stego image (PNG)</span>
+                        </div>
+                    </div>
+                    <div id="extractFileName" class="file-name-display"></div>
+                </div>
+                <button type="submit" class="btn btn-green" id="extractBtn">
+                    🔓 Extract &amp; Decrypt
+                </button>
+            </form>
+            <div class="spinner-wrap" id="extractSpinner">
+                <div class="spinner"></div>
+                <span>Extracting and decrypting hidden data...</span>
+            </div>
+            <div id="extractResult" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: AI DETECT -->
+    <div id="pane-detect" class="tab-pane">
+        <div class="card red">
+            <div class="card-header">
+                <div class="card-icon red">🤖</div>
+                <div>
+                    <div class="card-title">3. AI Steganography Detection (CNN)</div>
+                    <div class="card-subtitle">Upload any image — the AI model will classify it as Clean or Stego</div>
+                </div>
+            </div>
+
+            <div class="info-note">
+                <span class="icon">🧠</span>
+                <span>The CNN was trained on natural photographs. Upload either the <strong>original clean image</strong> or the <strong>stego output</strong> to verify detection.</span>
+            </div>
+            
+            <form id="detectForm">
+                <div class="form-group">
+                    <label>IMAGE TO ANALYSE (PNG / JPG)</label>
+                    <div class="file-input-wrap" id="detectDropzone">
+                        <input type="file" id="detectImage" accept=".png,.jpg,.jpeg" required onchange="handleFile(this,'detectFileName','detectDropzone')">
+                        <div class="file-input-label">
+                            <span class="file-icon">📷</span>
+                            <span>Click to choose image</span>
+                        </div>
+                    </div>
+                    <div id="detectFileName" class="file-name-display"></div>
+                </div>
+                <div style="display:flex; gap: 12px; flex-wrap: wrap;">
+                    <button type="submit" class="btn btn-red" id="detectBtn">🔍 Run AI Detection</button>
+                </div>
+            </form>
+            
+            <div class="spinner-wrap" id="detectSpinner">
+                <div class="spinner"></div>
+                <span>Running CNN inference...</span>
+            </div>
+            
+            <div id="detectResult" class="result-box"></div>
+        </div>
+    </div>
+
+</div><!-- end main content -->
+
 <script>
-    function showResult(containerId, html, isError) {
-        const el = document.getElementById(containerId);
+    function ts() { return "?t=" + Date.now(); }
+
+    function switchTab(paneId, btnEl) {
+        // Hide all panes
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        // Remove active class from all buttons
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
+        // Show selected pane and button
+        document.getElementById(paneId).classList.add('active');
+        btnEl.classList.add('active');
+    }
+
+    function handleFile(input, labelId, dropzoneId) {
+        const f = input.files[0];
+        const label = document.getElementById(labelId);
+        const dz = document.getElementById(dropzoneId);
+        if (f) {
+            label.textContent = '📄 ' + f.name;
+            label.style.display = 'block';
+            dz.style.borderColor = 'rgba(139,92,246,0.5)';
+            dz.style.background = 'rgba(139,92,246,0.05)';
+        }
+    }
+
+    function showSpinner(id, show) {
+        document.getElementById(id).style.display = show ? 'flex' : 'none';
+    }
+
+    function showResult(id, html, isError) {
+        const el = document.getElementById(id);
         el.className = 'result-box ' + (isError ? 'result-error' : 'result-success');
         el.innerHTML = html;
         el.style.display = 'block';
     }
 
-    function ts() { return "?t=" + Date.now(); }
-
-    // --- EMBED ---
+    // ── EMBED ──────────────────────────────
     document.getElementById('embedForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         document.getElementById('embedResult').style.display = 'none';
-        document.getElementById('embedSpinner').style.display = 'block';
+        showSpinner('embedSpinner', true);
+        document.getElementById('embedBtn').disabled = true;
+
         const fd = new FormData();
         fd.append('image', document.getElementById('embedImage').files[0]);
         fd.append('message', document.getElementById('embedMessage').value);
+
         try {
             const res = await fetch('/embed', { method: 'POST', body: fd });
             const json = await res.json();
             if (json.success) {
                 showResult('embedResult', `
-                    <strong>✅ Message embedded successfully.</strong>
-                    <br><img src="${json.output_url + ts()}" class="result-img" alt="Stego Image">
-                    <br><a class="download-link" href="${json.output_url}" download>↓ Download Stego Image</a>
+                    <span class="label-ok">✅ Message encrypted and embedded successfully.</span>
+                    <div class="stego-preview" style="margin-top:12px;">
+                        <img src="${json.output_url + ts()}" alt="Stego Image">
+                    </div>
+                    <div style="margin-top:6px; font-size:0.8rem; color:var(--muted);">
+                        📐 Image resized to 128×128 for CNN compatibility
+                    </div>
+                    <a class="download-btn" href="${json.output_url}" download>
+                        ⬇ Download Stego Image
+                    </a>
                 `, false);
             } else {
-                showResult('embedResult', `❌ ${json.error}`, true);
+                showResult('embedResult', `<span class="label-err">❌ ${json.error}</span>`, true);
             }
         } catch (err) {
-            showResult('embedResult', `❌ Network error: ${err.message}`, true);
+            showResult('embedResult', `<span class="label-err">❌ Network error: ${err.message}</span>`, true);
         }
-        document.getElementById('embedSpinner').style.display = 'none';
+        showSpinner('embedSpinner', false);
+        document.getElementById('embedBtn').disabled = false;
     });
 
-    // --- EXTRACT ---
+    // ── EXTRACT ────────────────────────────
     document.getElementById('extractForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         document.getElementById('extractResult').style.display = 'none';
-        document.getElementById('extractSpinner').style.display = 'block';
+        showSpinner('extractSpinner', true);
+        document.getElementById('extractBtn').disabled = true;
+
         const fd = new FormData();
         fd.append('image', document.getElementById('extractImage').files[0]);
+
         try {
             const res = await fetch('/extract', { method: 'POST', body: fd });
             const json = await res.json();
             if (json.success) {
                 showResult('extractResult', `
-                    <strong>✅ Message Extracted:</strong>
-                    <p style="font-family:monospace; font-size:1.1em; background:#fff; padding:10px; border:1px dashed #ccc; margin-top:8px; border-radius:4px;">${json.message}</p>
+                    <span class="label-ok">✅ Hidden message successfully decrypted:</span>
+                    <div class="extracted-msg">${escapeHtml(json.message)}</div>
                 `, false);
             } else {
-                showResult('extractResult', `❌ ${json.error}`, true);
+                let hint = '';
+                if (json.error && json.error.includes('PKCS#7')) {
+                    hint = '<div style="margin-top:10px; font-size:0.8rem; color:var(--yellow);">💡 Tip: Make sure you are uploading the exact stego PNG downloaded from this system. Using a non-natural image or a compressed file will break extraction.</div>';
+                }
+                showResult('extractResult', `<span class="label-err">❌ ${json.error}</span>${hint}`, true);
             }
         } catch (err) {
-            showResult('extractResult', `❌ Network error: ${err.message}`, true);
+            showResult('extractResult', `<span class="label-err">❌ Network error: ${err.message}</span>`, true);
         }
-        document.getElementById('extractSpinner').style.display = 'none';
+        showSpinner('extractSpinner', false);
+        document.getElementById('extractBtn').disabled = false;
     });
 
-    // --- DETECT ---
+    // ── DETECT ────────────────────────────
     document.getElementById('detectForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         document.getElementById('detectResult').style.display = 'none';
-        document.getElementById('detectSpinner').style.display = 'block';
+        showSpinner('detectSpinner', true);
+        document.getElementById('detectBtn').disabled = true;
+
         const fd = new FormData();
         fd.append('image', document.getElementById('detectImage').files[0]);
+
         try {
             const res = await fetch('/detect', { method: 'POST', body: fd });
             const json = await res.json();
             if (json.success) {
-                const badgeClass = json.is_stego ? 'badge-stego' : 'badge-clean';
-                const icon = json.is_stego ? '🔴' : '🟢';
+                const isStego = json.is_stego;
+                const fillClass = isStego ? 'fill-stego' : 'fill-clean';
+                const badgeClass = isStego ? 'badge-stego' : 'badge-clean';
+                const icon = isStego ? '🔴' : '🟢';
+                const conf = json.confidence;
                 showResult('detectResult', `
-                    <strong>✅ AI Detection Complete</strong>
-                    <br><img src="${json.preview_url + ts()}" class="preview-img" alt="Analysed Image">
-                    <br><span class="badge ${badgeClass}">${icon} ${json.label}</span>
-                    <p class="confidence">Confidence: ${json.confidence}%</p>
+                    <img src="${json.preview_url + ts()}" class="detect-preview" alt="Analysed" style="width: 140px; margin-bottom: 12px; float:right; margin-left: 14px;">
+                    <span class="label-ok">✅ AI Analysis Complete</span>
+                    <br>
+                    <div class="detect-badge ${badgeClass}">${icon} ${json.label}</div>
+                    <div class="confidence-bar-wrap">
+                        <div class="confidence-label">Confidence: <strong>${conf}%</strong></div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill ${fillClass}" style="width:${conf}%"></div>
+                        </div>
+                    </div>
+                    <div style="clear:both;font-size:0.78rem;color:var(--muted);margin-top:10px;">
+                        Raw sigmoid output: <code style="color:var(--accent)">${isStego ? (conf/100).toFixed(6) : (1-(conf/100)).toFixed(6)}</code>
+                    </div>
                 `, false);
             } else {
-                showResult('detectResult', `❌ ${json.error}`, true);
+                showResult('detectResult', `<span class="label-err">❌ ${json.error}</span>`, true);
             }
         } catch (err) {
-            showResult('detectResult', `❌ Network error: ${err.message}`, true);
+            showResult('detectResult', `<span class="label-err">❌ Network error: ${err.message}</span>`, true);
         }
-        document.getElementById('detectSpinner').style.display = 'none';
+        showSpinner('detectSpinner', false);
+        document.getElementById('detectBtn').disabled = false;
     });
 
-    // --- GENERATE ---
-    document.getElementById('btnGenerate').addEventListener('click', async () => {
-        document.getElementById('generateResult').style.display = 'none';
-        document.getElementById('generateSpinner').style.display = 'block';
-        try {
-            const res = await fetch('/generate', { method: 'POST' });
-            const json = await res.json();
-            if (json.success) {
-                const imgs = json.images.map(url => `<img src="${url + ts()}" alt="stego">`).join('');
-                showResult('generateResult', `<strong>✅ Generated ${json.images.length} stego images:</strong><div class="grid">${imgs}</div>`, false);
-            } else {
-                showResult('generateResult', `❌ ${json.error}`, true);
-            }
-        } catch (err) {
-            showResult('generateResult', `❌ Network error: ${err.message}`, true);
-        }
-        document.getElementById('generateSpinner').style.display = 'none';
-    });
+    function escapeHtml(text) {
+        return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 </script>
 </body>
 </html>

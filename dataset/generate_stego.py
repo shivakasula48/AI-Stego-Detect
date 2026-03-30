@@ -13,7 +13,7 @@ except ImportError as e:
 
 logger = logging.getLogger(__name__)
 
-from steganography.embed import embed_data
+from steganography.embed import embed_message
 from encryption.aes import encrypt_message
 
 # Fixed seed for reproducibility
@@ -219,24 +219,17 @@ def generate_stego_dataset(
             cv2.imwrite(clean_path, augmented_base, [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
             # --- STEGO ---
-            # Create a temporary file for the augmented base to be used by embed_data
-            tmp_path = os.path.join(base_dir, f"_tmp_{prefix}_{i}.png")
-            cv2.imwrite(tmp_path, augmented_base, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-            
+            msg = generate_random_message()
             stego_path = os.path.join(stego_dir, f"{prefix}_{i+1:04d}_stego.png")
             
-            # Save diff image only for the first few samples as debug
-            diff_path = os.path.join(debug_dir, f"{prefix}_{i+1:04d}_diff.png") if i < 10 else None
-            
-            msg = generate_random_message()
-            enc = encrypt_message(msg)
-            
-            # Embed directly into the augmented image
-            ok = embed_data(tmp_path, enc, stego_path, diff_path=diff_path)
-            os.remove(tmp_path)
-
-            if not ok:
-                logger.error(f"Failed to embed stego for {prefix}_{i+1}")
+            # Embed directly into the augmented image using unified function
+            try:
+                stego_img = embed_message(augmented_base, msg)
+                cv2.imwrite(stego_path, stego_img, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+                ok = True
+            except Exception as e:
+                logger.error(f"Failed to embed stego for {prefix}_{i+1}: {e}")
+                ok = False
 
             if (i + 1) % 10 == 0:
                 logger.info(f"[{prefix}] Progress: {i+1}/{len(img_list)}")

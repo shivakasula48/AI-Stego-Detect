@@ -22,9 +22,32 @@ def handle_embed(args):
         sys.exit(1)
 
     logging.info(f"Embedding into {args.input}...")
-    success = embed_data(args.input, enc_bytes, args.output)
+    
+    # CRITICAL: CNN expects 128x128. Resize BEFORE embedding to preserve signal.
+    import cv2
+    img = cv2.imread(args.input)
+    if img is None:
+        logging.error(f"Could not read cover image: {args.input}")
+        sys.exit(1)
+        
+    if img.shape[0] != 128 or img.shape[1] != 128:
+        logging.info("Resizing cover image to 128x128 for AI compatibility...")
+        img = cv2.resize(img, (128, 128))
+    
+    # Save temp resized image or use in-memory embedding
+    # The current embed_data function reads from path, so we save a temporary one
+    # or better: we update the logic to handle in-memory.
+    # But for now, let's keep it simple and overwrite the path for embed_data 
+    # OR create a temporary file.
+    temp_cover = "tmp_cover_128.png"
+    cv2.imwrite(temp_cover, img)
+    
+    success = embed_data(temp_cover, enc_bytes, args.output)
+    if os.path.exists(temp_cover):
+        os.remove(temp_cover)
+        
     if success:
-        logging.info(f"Successfully created stego image: {args.output}")
+        logging.info(f"Successfully created stego image: {args.output} (Size: 128x128)")
     else:
         logging.error("Failed to embed data.")
         sys.exit(1)

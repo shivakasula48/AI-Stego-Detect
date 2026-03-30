@@ -5,14 +5,19 @@ import numpy as np
 def load_and_preprocess_image(image_path, target_size=(128, 128)):
     """
     Reads an image from disk, converts to RGB (cv2 default is BGR), 
-    resizes to target_size, and normalizes pixel values to [0, 1].
+    resizes to target_size (if needed), and normalizes pixel values to [0, 1].
     """
     image = cv2.imread(image_path)
     if image is None:
         return None
         
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    image = cv2.resize(image, target_size)
+    
+    # Matching training: Skip resize if already correct size to avoid noise
+    h, w = image.shape[:2]
+    if h != target_size[1] or w != target_size[0]:
+        image = cv2.resize(image, target_size)
+        
     image = image.astype(np.float32) / 255.0
     return image
 

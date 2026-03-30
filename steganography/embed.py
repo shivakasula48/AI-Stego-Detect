@@ -11,6 +11,18 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 
+from encryption.aes import encrypt_message
+
+# Core DCT Embedding Parameters
+Q = 48        # Step size for QIM
+ALPHA = 4     # Robustness boost (noticeable for CNN)
+ZIGZAG_32 = [
+    (0,1), (1,0), (2,0), (1,1), (0,2), (0,3), (1,2), (2,1),
+    (3,0), (4,0), (3,1), (2,2), (1,3), (0,4), (0,5), (1,4),
+    (2,3), (3,2), (4,1), (5,0), (6,0), (5,1), (4,2), (3,3),
+    (2,4), (1,5), (0,6), (0,7), (1,6), (2,5), (3,4), (4,3)
+]
+
 def _string_to_bin(data):
     """Convert bytes to a binary string."""
     return ''.join(f'{byte:08b}' for byte in data)
@@ -25,72 +37,50 @@ def generate_diff_image(original, stego, output_path):
     logger.debug(f" Difference image saved to: {output_path}")
 
 
-def embed_data(image_path, data_bytes, output_path, diff_path=None):
+def embed_message(image: np.ndarray, message: str) -> np.ndarray:
     """
-    Embeds data_bytes into the image at image_path using DCT on all BGR channels.
-    Saves the result at output_path.
-    If diff_path is provided, saves a magnified difference image.
+    Encrypts a message and embeds it into the given BGR image using DCT.
+    Returns: The stego image as a numpy array.
     """
-    if not os.path.exists(image_path):
-        logger.error(f" Image not found: {image_path}")
-        return False
-
-    image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
-    if image is None:
-        logger.error(" Invalid image or unsupported format.")
-        return False
-
+    # Ensure image is in common format (BGR uint8)
     if len(image.shape) == 3 and image.shape[2] == 4:
         image = image[:, :, :3]
+        
+    # Prevent DCT overflow/underflow on uniform areas (like white backgrounds)
+    # by clamping pixel values to [15, 240] before embedding to allow +/- shift.
+    image = np.clip(image.astype(np.int32), 15, 240).astype(np.uint8)
+    
+    stego = image.copy().astype(np.float32)
 
-    if image.dtype != np.uint8:
-        image = image.astype(np.uint8)
-
-    h, w, c = image.shape
-    channels = cv2.split(image)  # [B, G, R]
-    channels_f32 = [np.float32(ch) for ch in channels]
-
-    data_length = len(data_bytes)
-    length_bytes = data_length.to_bytes(4, byteorder='big')
-    final_data = length_bytes + data_bytes
-    binary_data = _string_to_bin(final_data)
+    # 1. Encrypt Message
+    data_bytes = encrypt_message(message)
+    
+    # 2. Add Length Header (4 bytes)
+    full_payload = len(data_bytes).to_bytes(4, byteorder='big') + data_bytes
+    binary_data = _string_to_bin(full_payload)
     data_len = len(binary_data)
 
-    # Standard ZigZag order (excluding DC at 0,0)
-    # We pick the first 32 stable mid-frequency coefficients
-    ZIGZAG_FULL = [
-        (0,1), (1,0), (2,0), (1,1), (0,2), (0,3), (1,2), (2,1),
-        (3,0), (4,0), (3,1), (2,2), (1,3), (0,4), (0,5), (1,4),
-        (2,3), (3,2), (4,1), (5,0), (6,0), (5,1), (4,2), (3,3),
-        (2,4), (1,5), (0,6), (0,7), (1,6), (2,5), (3,4), (4,3)
-    ]
-    AC_COEFFS = ZIGZAG_FULL
+    h, w, c = stego.shape
+    max_capacity = (h // 8) * (w // 8) * c * len(ZIGZAG_32)
     
-    # Capacity Check
-    max_capacity = (h // 8) * (w // 8) * c * len(AC_COEFFS)
     if data_len > max_capacity:
-        logger.error(f" Data too large ({data_len} bits) for image capacity ({max_capacity} bits).")
-        return False
+        raise ValueError(f"Message too large ({data_len} bits) for image capacity ({max_capacity} bits).")
 
     bit_idx = 0
-    Q = 48      # Increased for extreme robustness
-    ALPHA = 4   # Noticeable perturbation for CNN patterns
+    channels = cv2.split(stego)
 
-    # Process each channel (B, G, R)
+    # 3. Embed across BGR channels
     for ch_idx in range(c):
-        ch_data = channels_f32[ch_idx]
-        
+        ch_data = channels[ch_idx]
         for row in range(0, h - (h % 8), 8):
             for col in range(0, w - (w % 8), 8):
-                if bit_idx >= data_len:
-                    break
+                if bit_idx >= data_len: break
                     
                 block = ch_data[row:row+8, col:col+8]
                 dct_block = cv2.dct(block)
                 
-                for u, v in AC_COEFFS:
-                    if bit_idx >= data_len:
-                        break
+                for u, v in ZIGZAG_32:
+                    if bit_idx >= data_len: break
                         
                     bit = int(binary_data[bit_idx])
                     coef = dct_block[u, v]
@@ -98,34 +88,68 @@ def embed_data(image_path, data_bytes, output_path, diff_path=None):
                     # QIM embedding
                     step = round(coef / Q)
                     if (step % 2) != bit:
-                        if coef > step * Q:
-                            step += 1
-                        else:
-                            step -= 1
+                        step += 1 if coef > step * Q else -1
                             
-                    # Apply final step * Q + ALPHA shift for amplification
+                    # Apply ALPHA shift
                     shift = ALPHA if bit == 1 else -ALPHA
                     dct_block[u, v] = (step * Q) + shift
-                    
                     bit_idx += 1
                     
                 ch_data[row:row+8, col:col+8] = cv2.idct(dct_block)
-                
-            if bit_idx >= data_len:
-                break
-        if bit_idx >= data_len:
-            break
+            if bit_idx >= data_len: break
+        if bit_idx >= data_len: break
 
-    # Reconstruct Image
-    merged_channels = [np.clip(np.round(ch), 0, 255).astype(np.uint8) for ch in channels_f32]
-    stego_bgr = cv2.merge(merged_channels)
-    
-    cv2.imwrite(output_path, stego_bgr, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-    
-    # Generate difference image for debugging purposes if provided
+    # Final Merge
+    merged = [np.clip(np.round(ch), 0, 255).astype(np.uint8) for ch in channels]
+    return cv2.merge(merged)
+
+
+def embed_data(image_path, data_bytes, output_path, diff_path=None):
+    """
+    Legacy wrapper for file-based embedding. 
+    Note: Now bypasses internal encryption because it receives pre-encrypted bytes.
+    Use embed_message for the unified pipeline.
+    """
+    image = cv2.imread(image_path)
+    if image is None: return False
+
+    # Prevent DCT overflow/underflow
+    image = np.clip(image.astype(np.int32), 15, 240).astype(np.uint8)
+
+    # Since this function is for legacy support and takes bytes, we replicate the 
+    # logic or wrap a raw version. For now, let's keep it robust but using the same constants.
+    full_payload = len(data_bytes).to_bytes(4, byteorder='big') + data_bytes
+    binary_data = _string_to_bin(full_payload)
+    data_len = len(binary_data)
+
+    h, w, c = image.shape
+    stego = image.astype(np.float32)
+    channels = cv2.split(stego)
+    bit_idx = 0
+
+    for ch_idx in range(c):
+        ch_data = channels[ch_idx]
+        for row in range(0, h - (h % 8), 8):
+            for col in range(0, w - (w % 8), 8):
+                if bit_idx >= data_len: break
+                block = ch_data[row:row+8, col:col+8]
+                dct_block = cv2.dct(block)
+                for u, v in ZIGZAG_32:
+                    if bit_idx >= data_len: break
+                    bit = int(binary_data[bit_idx])
+                    step = round(dct_block[u, v] / Q)
+                    if (step % 2) != bit:
+                        step += 1 if dct_block[u, v] > step * Q else -1
+                    dct_block[u, v] = (step * Q) + (ALPHA if bit == 1 else -ALPHA)
+                    bit_idx += 1
+                ch_data[row:row+8, col:col+8] = cv2.idct(dct_block)
+            if bit_idx >= data_len: break
+        if bit_idx >= data_len: break
+
+    res = cv2.merge([np.clip(np.round(ch), 0, 255).astype(np.uint8) for ch in channels])
+    cv2.imwrite(output_path, res, [cv2.IMWRITE_PNG_COMPRESSION, 0])
     if diff_path:
-        generate_diff_image(image, stego_bgr, diff_path)
-    
+        generate_diff_image(image, res, diff_path)
     return True
 
 
@@ -152,7 +176,7 @@ def run_self_test():
     enc = encrypt_message(message)
     stego_path = "pipeline_test_stego.png"
     
-    if embed_data(dummy_img_path, enc, stego_path):
+    if embed_data(dummy_img_path, encrypt_message(message), stego_path):
         extracted = extract_data(stego_path)
         dec = decrypt_message(extracted)
         if dec == message:

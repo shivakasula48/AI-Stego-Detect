@@ -41,11 +41,14 @@ def predict_image(image_path, model_path="ai_model/stego_detector.h5"):
 
     try:
         img_batch = np.expand_dims(img, axis=0)
-        prediction = float(model.predict(img_batch, verbose=0)[0][0])
+        raw_pred = model.predict(img_batch, verbose=0)[0][0]
+        prediction = float(raw_pred)
     except Exception as e:
         logger.error(f"Prediction failed: {e}")
         return None, None
 
+    # Confidence calculation: Sigmoid outputs [0, 1]
+    # 0 = Clean, 1 = Stego
     if prediction < 0.5:
         label = "Clean Image"
         confidence = (1.0 - prediction) * 100
@@ -53,7 +56,7 @@ def predict_image(image_path, model_path="ai_model/stego_detector.h5"):
         label = "Stego Image"
         confidence = prediction * 100
 
-    logger.info(f"Prediction: {label} | Confidence: {confidence:.2f}%")
+    logger.info(f"Analysis Complete: [Raw: {prediction:.6f}] [Label: {label}] [Conf: {confidence:.2f}%]")
     return label, confidence
 
 
