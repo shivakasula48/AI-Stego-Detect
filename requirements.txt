@@ -1,0 +1,6 @@
+opencv-python>=4.0
+numpy>=1.20
+pycryptodome>=3.10
+tensorflow>=2.10
+scikit-learn>=1.0
+Flask>=2.0

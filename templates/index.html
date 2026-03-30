@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steganography Test Portal</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #333; padding: 20px; }
+        .container { max-width: 860px; margin: 0 auto; }
+        h1 { text-align: center; color: #1a1a2e; margin-bottom: 30px; font-size: 1.8em; letter-spacing: 1px; }
+        .section { background: #fff; margin-bottom: 24px; padding: 24px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .section h2 { font-size: 1.1em; color: #6c3483; border-left: 4px solid #8e44ad; padding-left: 10px; margin-bottom: 18px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; font-size: 0.9em; font-weight: 600; margin-bottom: 5px; color: #555; }
+        .form-group input[type="file"],
+        .form-group input[type="text"] { width: 100%; padding: 9px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95em; background: #fafafa; }
+        button { background: #8e44ad; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 0.95em; font-weight: 600; transition: background 0.2s; }
+        button:hover { background: #6c3483; }
+        .spinner { display: none; margin-top: 10px; font-size: 0.9em; color: #888; font-style: italic; }
+        .result-box { display: none; margin-top: 16px; padding: 14px; border-radius: 8px; }
+        .result-success { background: #eafaf1; border-left: 4px solid #27ae60; }
+        .result-error { background: #fdeded; border-left: 4px solid #e74c3c; color: #c0392b; }
+        .result-img { max-width: 100%; max-height: 320px; border-radius: 6px; margin-top: 12px; border: 1px solid #ddd; }
+        .download-link { display: inline-block; margin-top: 10px; color: #3498db; font-weight: bold; text-decoration: none; }
+        .grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+        .grid img { width: 140px; height: 140px; object-fit: cover; border: 1px solid #ccc; border-radius: 6px; }
+        .badge { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 1em; font-weight: 700; margin-top: 6px; }
+        .badge-stego { background: #fdecea; color: #c0392b; border: 1px solid #e74c3c; }
+        .badge-clean { background: #eafaf1; color: #1e8449; border: 1px solid #27ae60; }
+        .confidence { font-size: 0.88em; color: #777; margin-top: 4px; }
+        .preview-img { max-width: 200px; border-radius: 6px; margin-top: 10px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔐 Steganography Validation Portal</h1>
+
+    <!-- SECTION 1: EMBED -->
+    <div class="section">
+        <h2>1. Embed Secret Message</h2>
+        <form id="embedForm">
+            <div class="form-group">
+                <label>Cover Image (PNG)</label>
+                <input type="file" id="embedImage" accept=".png" required>
+            </div>
+            <div class="form-group">
+                <label>Secret Message</label>
+                <input type="text" id="embedMessage" placeholder="Enter your secret..." required>
+            </div>
+            <button type="submit">Encrypt &amp; Embed</button>
+        </form>
+        <p class="spinner" id="embedSpinner">⏳ Processing encryption and embedding pipeline...</p>
+        <div id="embedResult" class="result-box"></div>
+    </div>
+
+    <!-- SECTION 2: EXTRACT -->
+    <div class="section">
+        <h2>2. Extract Hidden Message</h2>
+        <form id="extractForm">
+            <div class="form-group">
+                <label>Stego Image (PNG)</label>
+                <input type="file" id="extractImage" accept=".png" required>
+            </div>
+            <button type="submit">Extract &amp; Decrypt</button>
+        </form>
+        <p class="spinner" id="extractSpinner">⏳ Extracting and decrypting data...</p>
+        <div id="extractResult" class="result-box"></div>
+    </div>
+
+    <!-- SECTION 3: DETECT -->
+    <div class="section">
+        <h2>3. AI Detection (CNN)</h2>
+        <form id="detectForm">
+            <div class="form-group">
+                <label>Image to Analyse (PNG)</label>
+                <input type="file" id="detectImage" accept=".png" required>
+            </div>
+            <button type="submit">🔍 Detect</button>
+        </form>
+        <p class="spinner" id="detectSpinner">⏳ Running AI model inference...</p>
+        <div id="detectResult" class="result-box"></div>
+    </div>
+
+    <!-- SECTION 4: DATASET -->
+    <div class="section">
+        <h2>4. Generate Mini Dataset</h2>
+        <p style="font-size:0.9em; color:#666; margin-bottom:14px;">Generates 3 synthetic stego images for visual batch validation.</p>
+        <button id="btnGenerate">⚙️ Generate Dataset</button>
+        <p class="spinner" id="generateSpinner">⏳ Generating dataset...</p>
+        <div id="generateResult" class="result-box"></div>
+    </div>
+</div>
+
+<script>
+    function showResult(containerId, html, isError) {
+        const el = document.getElementById(containerId);
+        el.className = 'result-box ' + (isError ? 'result-error' : 'result-success');
+        el.innerHTML = html;
+        el.style.display = 'block';
+    }
+
+    function ts() { return "?t=" + Date.now(); }
+
+    // --- EMBED ---
+    document.getElementById('embedForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        document.getElementById('embedResult').style.display = 'none';
+        document.getElementById('embedSpinner').style.display = 'block';
+        const fd = new FormData();
+        fd.append('image', document.getElementById('embedImage').files[0]);
+        fd.append('message', document.getElementById('embedMessage').value);
+        try {
+            const res = await fetch('/embed', { method: 'POST', body: fd });
+            const json = await res.json();
+            if (json.success) {
+                showResult('embedResult', `
+                    <strong>✅ Message embedded successfully.</strong>
+                    <br><img src="${json.output_url + ts()}" class="result-img" alt="Stego Image">
+                    <br><a class="download-link" href="${json.output_url}" download>↓ Download Stego Image</a>
+                `, false);
+            } else {
+                showResult('embedResult', `❌ ${json.error}`, true);
+            }
+        } catch (err) {
+            showResult('embedResult', `❌ Network error: ${err.message}`, true);
+        }
+        document.getElementById('embedSpinner').style.display = 'none';
+    });
+
+    // --- EXTRACT ---
+    document.getElementById('extractForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        document.getElementById('extractResult').style.display = 'none';
+        document.getElementById('extractSpinner').style.display = 'block';
+        const fd = new FormData();
+        fd.append('image', document.getElementById('extractImage').files[0]);
+        try {
+            const res = await fetch('/extract', { method: 'POST', body: fd });
+            const json = await res.json();
+            if (json.success) {
+                showResult('extractResult', `
+                    <strong>✅ Message Extracted:</strong>
+                    <p style="font-family:monospace; font-size:1.1em; background:#fff; padding:10px; border:1px dashed #ccc; margin-top:8px; border-radius:4px;">${json.message}</p>
+                `, false);
+            } else {
+                showResult('extractResult', `❌ ${json.error}`, true);
+            }
+        } catch (err) {
+            showResult('extractResult', `❌ Network error: ${err.message}`, true);
+        }
+        document.getElementById('extractSpinner').style.display = 'none';
+    });
+
+    // --- DETECT ---
+    document.getElementById('detectForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        document.getElementById('detectResult').style.display = 'none';
+        document.getElementById('detectSpinner').style.display = 'block';
+        const fd = new FormData();
+        fd.append('image', document.getElementById('detectImage').files[0]);
+        try {
+            const res = await fetch('/detect', { method: 'POST', body: fd });
+            const json = await res.json();
+            if (json.success) {
+                const badgeClass = json.is_stego ? 'badge-stego' : 'badge-clean';
+                const icon = json.is_stego ? '🔴' : '🟢';
+                showResult('detectResult', `
+                    <strong>✅ AI Detection Complete</strong>
+                    <br><img src="${json.preview_url + ts()}" class="preview-img" alt="Analysed Image">
+                    <br><span class="badge ${badgeClass}">${icon} ${json.label}</span>
+                    <p class="confidence">Confidence: ${json.confidence}%</p>
+                `, false);
+            } else {
+                showResult('detectResult', `❌ ${json.error}`, true);
+            }
+        } catch (err) {
+            showResult('detectResult', `❌ Network error: ${err.message}`, true);
+        }
+        document.getElementById('detectSpinner').style.display = 'none';
+    });
+
+    // --- GENERATE ---
+    document.getElementById('btnGenerate').addEventListener('click', async () => {
+        document.getElementById('generateResult').style.display = 'none';
+        document.getElementById('generateSpinner').style.display = 'block';
+        try {
+            const res = await fetch('/generate', { method: 'POST' });
+            const json = await res.json();
+            if (json.success) {
+                const imgs = json.images.map(url => `<img src="${url + ts()}" alt="stego">`).join('');
+                showResult('generateResult', `<strong>✅ Generated ${json.images.length} stego images:</strong><div class="grid">${imgs}</div>`, false);
+            } else {
+                showResult('generateResult', `❌ ${json.error}`, true);
+            }
+        } catch (err) {
+            showResult('generateResult', `❌ Network error: ${err.message}`, true);
+        }
+        document.getElementById('generateSpinner').style.display = 'none';
+    });
+</script>
+</body>
+</html>
