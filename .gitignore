@@ -97,11 +97,15 @@ cython_debug/
 venv/
 .env
 
+
 # Data, models, and images (optional, comment out if needed)
-dataset/
+# Ignore generated dataset images only
+dataset/train/
+dataset/val/
 images/
 ai_model/*.h5
-*.png
+# Ignore debug images only (optional)
+*_diff.png
 
 # Logs
 *.log
