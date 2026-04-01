@@ -147,3 +147,14 @@ For questions, issues, or contributions, please open an issue or pull request on
 =======
  Only PNG images are guaranteed against lossy pipeline corruptions!
 - For best model accuracy, generate at least 400 image pairs using the `optimize` command.
+
+
+## Freelance Project Notice
+
+> 💼 **This is a freelance project** built and delivered for a client.
+>
+> We are **available for freelance work** — if you need a similar application or any custom software built, feel free to reach out!
+>
+> 📧 **Contact:** [shivakasula10@gmail.com](mailto:shivakasula10@gmail.com)
+>
+> We specialize in AI/ML applications, web development, facial recognition systems, and full-stack Python projects. Let's build something great together.
